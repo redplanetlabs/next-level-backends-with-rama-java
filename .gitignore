@@ -1,0 +1,10 @@
+target/
+.classpath
+.settings
+.project
+.lein-failures
+.lein-repl-history
+.nrepl-port
+.factorypath
+/.apt_generated/
+/.apt_generated_tests/
