@@ -47,7 +47,7 @@ public class WhoToFollowModule implements RamaModule {
                  Block.localTransform("$$next-id", Path.termVal(0L)),
                  Block.each((SortedMap m) -> m.lastKey(), "*m").out("*max-id")
                       .localTransform("$$next-id", Path.termVal("*max-id")))
-              .select("*m", Path.mapKeys()).out("*account-id")
+              .each(Ops.EXPLODE_MAP, "*m").out("*account-id", "*follows")
               .localSelect("$$follows",
                            Path.key("*account-id")
                                .sortedSetRangeFrom(0L, 200)
