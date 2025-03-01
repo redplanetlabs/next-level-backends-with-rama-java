@@ -13,7 +13,7 @@ public class WhoToFollowModule implements RamaModule {
   @Override
   public void define(Setup setup, Topologies topologies) {
     setup.declareDepot("*follows-depot", Depot.hashBy("from"));
-    if(IS_TEST_MODE) setup.declareTickDepot("*who-to-follow-tick", 30000);
+    if(!IS_TEST_MODE) setup.declareTickDepot("*who-to-follow-tick", 30000);
     else setup.declareDepot("*who-to-follow-tick", Depot.random()).global();
 
     StreamTopology topology = topologies.stream("core");
@@ -59,7 +59,7 @@ public class WhoToFollowModule implements RamaModule {
               .keepTrue(new Expr(Ops.NOT_EQUAL, "*account-id", "*candidate-id"))
               .hashPartition("*account-id")
               .compoundAgg(CompoundAgg.map("*account-id", CompoundAgg.map("*candidate-id", Agg.count()))).out("*m")
-              .each(Ops.EXPLODE_MAP, "*m").out("*account-id", "*candidate-counts");
+              .each(Ops.EXPLODE_MAP, "*m").out("*account-id", "*candidate-counts")
               .each((Map cc) -> {
                  ArrayList<Map.Entry<Long, Integer>> l = new ArrayList(cc.entrySet());
                  l.sort(Map.Entry.comparingByValue());

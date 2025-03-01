@@ -67,9 +67,9 @@ public class WhoToFollowModuleTest {
       ipc.waitForMicrobatchProcessedCount(moduleName, "who-to-follow", 1);
 
       Set expected = new HashSet();
-      expected.add(10);
-      expected.add(8);
-      expected.add(9);
+      expected.add(10L);
+      expected.add(8L);
+      expected.add(9L);
 
       assertEquals(expected, new HashSet((List) whoToFollow.selectOne(Path.key(1L))));
     }
