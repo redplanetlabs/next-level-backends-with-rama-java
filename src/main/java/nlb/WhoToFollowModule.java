@@ -54,7 +54,9 @@ public class WhoToFollowModule implements RamaModule {
                                             .all()).out("*candidate-id")
               .keepTrue(new Expr(Ops.NOT_EQUAL, "*account-id", "*candidate-id"))
               .hashPartition("*account-id")
-              .compoundAgg(CompoundAgg.map("*account-id", CompoundAgg.map("*candidate-id", Agg.count()))).out("*m")
+              .compoundAgg(CompoundAgg.map("*account-id",
+                                           CompoundAgg.map("*candidate-id",
+                                                           Agg.count()))).out("*m")
               .each(Ops.EXPLODE_MAP, "*m").out("*account-id", "*candidate-counts")
               .each((Map cc) -> {
                  ArrayList<Map.Entry<Long, Integer>> l = new ArrayList(cc.entrySet());
@@ -67,7 +69,7 @@ public class WhoToFollowModule implements RamaModule {
               .each((RamaFunction0) ArrayList::new).out("*who-to-follow")
               .loop(
                  Block.ifTrue(new Expr((List w, List c) -> w.size() >= NUM_RECOMMENDATIONS || c.size() == 0,
-                   "*who-to-follow", "*candidate-order"),
+                                       "*who-to-follow", "*candidate-order"),
                    Block.emitLoop(),
                    Block.yieldIfOvertime()
                         .each((LinkedList l) -> l.pop(), "*candidate-order").out("*candidate-id")
