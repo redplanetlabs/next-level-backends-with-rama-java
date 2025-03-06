@@ -35,7 +35,7 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
 
   private static List transformRemoveAgainstAdd(List<Map> removes, Map missedEdit) {
     int offset = offset(missedEdit);
-    int addAmount = amount(missedEdit);
+    int addAmount = content(missedEdit).length();
     List newRemoves = new ArrayList();
     for(Map edit: removes) {
       int start = offset(edit);
@@ -59,11 +59,11 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
         edit1.put("offset", start);
         edit1.put("amount", remove1);
         Map edit2 = new HashMap();
-        edit1.put("type", "remove");
-        edit1.put("id", id);
-        edit1.put("version", version);
-        edit1.put("offset", start2);
-        edit1.put("amount", remove2);
+        edit2.put("type", "remove");
+        edit2.put("id", id);
+        edit2.put("version", version);
+        edit2.put("offset", start2);
+        edit2.put("amount", remove2);
         newRemoves.add(edit1);
         newRemoves.add(edit2);
       }
@@ -100,7 +100,7 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
     return newRemoves;
   }
 
-  private static List transformEdit(Map edit, List<Map> missedEdits) {
+  public static List transformEdit(Map edit, List<Map> missedEdits) {
     int offset = offset(edit);
     if(isAddEdit(edit)) {
       int adjustment = 0;
@@ -114,7 +114,7 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
       List removes = Arrays.asList(edit);
       for(Map e: missedEdits) {
         if(isAddEdit(e)) removes = transformRemoveAgainstAdd(removes, e);
-        else removes= transformRemoveAgainstRemove(removes, e);
+        else removes = transformRemoveAgainstRemove(removes, e);
       }
       return removes;
     }
@@ -158,5 +158,17 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
                   "*latest-doc", "*final-edits").out("*new-doc")
             .localTransform("$$docs", Path.key("*id").termVal("*new-doc"))
             .localTransform("$$edits", Path.key("*id").end().termVal("*final-edits"));
+
+    topologies.query("doc+version", "*id").out("*ret")
+              .hashPartition("*id")
+              .localSelect("$$docs", Path.key("*id")).out("*doc")
+              .localSelect("$$edits", Path.key("*id").view(Ops.SIZE)).out("*version")
+              .each((String doc, Integer version) -> {
+                Map ret = new HashMap();
+                ret.put("doc", doc);
+                ret.put("version", version);
+                return ret;
+              }, "*doc", "*version").out("*ret")
+              .originPartition();
   }
 }
