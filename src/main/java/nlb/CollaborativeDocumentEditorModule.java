@@ -7,7 +7,6 @@ import com.rpl.rama.ops.*;
 import java.util.*;
 
 public class CollaborativeDocumentEditorModule implements RamaModule {
-
   private static boolean isAddEdit(Map edit) {
     return edit.get("type").equals("add");
   }
