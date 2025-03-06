@@ -1,31 +1,42 @@
 package nlb;
 
 import org.junit.Test;
+
+import com.rpl.rama.*;
+import com.rpl.rama.test.*;
+
 import java.util.*;
 
 import static org.junit.Assert.*;
 import static nlb.CollaborativeDocumentEditorModule.*;
 
 public class CollaborativeDocumentEditorModuleTest {
-  private static Map testAddEdit(int offset, String content) {
+  private static Map testAddEdit(long id, int version, int offset, String content) {
     Map ret = new HashMap();
     ret.put("type", "add");
-    ret.put("id", 123L);
-    ret.put("version", 0);
+    ret.put("id", id);
+    ret.put("version", version);
     ret.put("offset", offset);
     ret.put("content", content);
+    return ret;
+  }
 
+  private static Map testAddEdit(int offset, String content) {
+    return testAddEdit(123L, 0, offset, content);
+  }
+
+  private static Map testRemoveEdit(long id, int version, int offset, int amount) {
+    Map ret = new HashMap();
+    ret.put("type", "remove");
+    ret.put("id", id);
+    ret.put("version", version);
+    ret.put("offset", offset);
+    ret.put("amount", amount);
     return ret;
   }
 
   private static Map testRemoveEdit(int offset, int amount) {
-    Map ret = new HashMap();
-    ret.put("type", "remove");
-    ret.put("id", 123L);
-    ret.put("version", 0);
-    ret.put("offset", offset);
-    ret.put("amount", amount);
-    return ret;
+    return testRemoveEdit(123L, 0, offset, amount);
   }
 
   @Test
@@ -100,6 +111,40 @@ public class CollaborativeDocumentEditorModuleTest {
                                              testRemoveEdit(100, 10),
                                              testRemoveEdit(19, 5),
                                              testAddEdit(20, ".."))));
+  }
 
+  private static Map docVersion(String doc, int version) {
+    Map ret = new HashMap();
+    ret.put("doc", doc);
+    ret.put("version", version);
+    return ret;
+  }
+
+  @Test
+  public void moduleTest() throws Exception {
+    try(InProcessCluster ipc = InProcessCluster.create()) {
+      CollaborativeDocumentEditorModule module = new CollaborativeDocumentEditorModule();
+      String moduleName = module.getClass().getName();
+      ipc.launchModule(module, new LaunchConfig(4, 2));
+      Depot editDepot = ipc.clusterDepot(moduleName, "*edit-depot");
+      QueryTopologyClient<Map> docAndVersion = ipc.clusterQuery(moduleName, "doc+version");
+
+      editDepot.append(testAddEdit(123L, 0, 0, "Hellox"));
+      assertEquals(docVersion("Hellox", 1), docAndVersion.invoke(123L));
+
+      editDepot.append(testRemoveEdit(123L, 1, 5, 1));
+      assertEquals(docVersion("Hello", 2), docAndVersion.invoke(123L));
+
+      editDepot.append(testAddEdit(123L, 2, 5, " wor"));
+      assertEquals(docVersion("Hello wor", 3), docAndVersion.invoke(123L));
+
+      editDepot.append(testAddEdit(123L, 3, 9, "ld!"));
+      assertEquals(docVersion("Hello world!", 4), docAndVersion.invoke(123L));
+
+      editDepot.append(testAddEdit(123L, 2, 5, "abcd"));
+      editDepot.append(testRemoveEdit(123L, 2, 0, 4));
+      editDepot.append(testRemoveEdit(123L, 1, 0, 3));
+      assertEquals(docVersion("o world!abcd", 6), docAndVersion.invoke(123L));
+    }
   }
 }

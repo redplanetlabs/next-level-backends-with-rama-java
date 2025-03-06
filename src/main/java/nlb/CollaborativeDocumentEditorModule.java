@@ -150,7 +150,7 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
               Block.each(Ops.TUPLE, "*edit").out("*final-edits"),
               Block.localSelect("$$edits",
                                 Path.key("*id")
-                                    .sublist("*latest-version", "*version")).out("*missed-edits")
+                                    .sublist("*version", "*latest-version")).out("*missed-edits")
                    .each(CollaborativeDocumentEditorModule::transformEdit,
                          "*edit", "*missed-edits").out("*final-edits"))
             .localSelect("$$docs", Path.key("*id").nullToVal("")).out("*latest-doc")
