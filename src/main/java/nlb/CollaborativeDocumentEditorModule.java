@@ -63,8 +63,8 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
         edit2.put("version", version);
         edit2.put("offset", start2);
         edit2.put("amount", remove2);
-        newRemoves.add(edit1);
         newRemoves.add(edit2);
+        newRemoves.add(edit1);
       }
     }
     return newRemoves;

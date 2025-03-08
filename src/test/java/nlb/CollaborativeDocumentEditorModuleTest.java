@@ -77,7 +77,7 @@ public class CollaborativeDocumentEditorModuleTest {
                  transformEdit(edit, Arrays.asList(testAddEdit(16, "..."))));
    assertEquals(Arrays.asList(testRemoveEdit(10, 6)),
                  transformEdit(edit, Arrays.asList(testAddEdit(20, "..."))));
-   assertEquals(Arrays.asList(testRemoveEdit(10, 2), testRemoveEdit(15, 4)),
+   assertEquals(Arrays.asList(testRemoveEdit(15, 4), testRemoveEdit(10, 2)),
                  transformEdit(edit, Arrays.asList(testAddEdit(12, "..."))));
 
    // Remove against missed remove
@@ -105,7 +105,7 @@ public class CollaborativeDocumentEditorModuleTest {
                  transformEdit(edit, Arrays.asList(testRemoveEdit(18, 10))));
 
    // Transform against multiple edits
-   assertEquals(Arrays.asList(testRemoveEdit(19, 1), testRemoveEdit(22, 3)),
+   assertEquals(Arrays.asList(testRemoveEdit(22, 3), testRemoveEdit(19, 1)),
                  transformEdit(testRemoveEdit(20, 5),
                                Arrays.asList(testAddEdit(10, "..."),
                                              testRemoveEdit(100, 10),
