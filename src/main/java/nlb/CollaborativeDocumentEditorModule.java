@@ -136,10 +136,10 @@ public class CollaborativeDocumentEditorModule implements RamaModule {
     setup.declareDepot("*edit-depot", Depot.hashBy("id"));
 
     StreamTopology topology = topologies.stream("core");
+    topology.pstate("$$docs", PState.mapSchema(Long.class, String.class));
     topology.pstate("$$edits",
                     PState.mapSchema(Long.class,
                                      PState.listSchema(Map.class).subindexed()));
-    topology.pstate("$$docs", PState.mapSchema(Long.class, String.class));
 
     topology.source("*edit-depot").out("*edit")
             .each(Ops.GET, "*edit", "id").out("*id")
