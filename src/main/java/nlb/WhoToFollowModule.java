@@ -7,14 +7,14 @@ import com.rpl.rama.ops.*;
 import java.util.*;
 
 public class WhoToFollowModule implements RamaModule {
-  public static int NUM_RECOMMENDATIONS = 300;
-  public static boolean IS_TEST_MODE = false;
+  public int numRecommendations = 300;
+  public boolean isTestMode = false;
 
   @Override
   public void define(Setup setup, Topologies topologies) {
     setup.declareDepot("*follows-depot", Depot.hashBy("from"));
-    if(!IS_TEST_MODE) setup.declareTickDepot("*who-to-follow-tick", 30000);
-    else setup.declareDepot("*who-to-follow-tick", Depot.random()).global();
+    if(isTestMode) setup.declareDepot("*who-to-follow-tick", Depot.random()).global();
+    else setup.declareTickDepot("*who-to-follow-tick", 30000);
 
     StreamTopology topology = topologies.stream("core");
     topology.pstate(
@@ -68,8 +68,8 @@ public class WhoToFollowModule implements RamaModule {
               }, "*candidate-counts").out("*candidate-order")
               .each((RamaFunction0) ArrayList::new).out("*who-to-follow")
               .loop(
-                 Block.ifTrue(new Expr((List w, List c) -> w.size() >= NUM_RECOMMENDATIONS || c.size() == 0,
-                                       "*who-to-follow", "*candidate-order"),
+                 Block.ifTrue(new Expr((List w, List c, Integer numRecommendations) -> w.size() >= numRecommendations || c.size() == 0,
+                                       "*who-to-follow", "*candidate-order", numRecommendations),
                    Block.emitLoop(),
                    Block.yieldIfOvertime()
                         .each((LinkedList l) -> l.pop(), "*candidate-order").out("*candidate-id")

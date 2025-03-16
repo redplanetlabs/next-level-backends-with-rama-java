@@ -19,10 +19,10 @@ public class WhoToFollowModuleTest {
 
   @Test
   public void test() throws Exception {
-    WhoToFollowModule.IS_TEST_MODE = true;
-    WhoToFollowModule.NUM_RECOMMENDATIONS = 3;
     try(InProcessCluster ipc = InProcessCluster.create()) {
       WhoToFollowModule module = new WhoToFollowModule();
+      module.isTestMode = true;
+      module.numRecommendations = 3;
       String moduleName = module.getClass().getName();
       ipc.launchModule(module, new LaunchConfig(4, 2));
       Depot followsDepot = ipc.clusterDepot(moduleName, "*follows-depot");
