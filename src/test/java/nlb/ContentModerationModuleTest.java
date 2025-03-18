@@ -18,6 +18,22 @@ public class ContentModerationModuleTest {
     return ret;
   }
 
+  public static Map createMute(long userId, long mutedUserId) {
+    Map ret = new HashMap();
+    ret.put("type", "mute");
+    ret.put("user-id", userId);
+    ret.put("muted-user-id", mutedUserId);
+    return ret;
+  }
+
+  public static Map createUnmute(long userId, long unmutedUserId) {
+    Map ret = new HashMap();
+    ret.put("type", "unmute");
+    ret.put("user-id", userId);
+    ret.put("unmuted-user-id", unmutedUserId);
+    return ret;
+  }
+
   public static Map queryRes(Integer nextOffset, Map... posts) {
     Map ret = new HashMap();
     ret.put("next-offset", nextOffset);
@@ -65,25 +81,17 @@ public class ContentModerationModuleTest {
       assertEquals(queryRes(null, post7, post8), getPosts.invoke(user1, 6, 3));
       assertEquals(queryRes(null), getPosts.invoke(user1, 8, 3));
 
+      muteDepot.append(createMute(user1, user2));
+      muteDepot.append(createMute(user1, user4));
 
-//
-//      (foreign-append! mute-depot (cm/->Mute user1 user2))
-//      (foreign-append! mute-depot (cm/->Mute user1 user4))
-//
-//      (is (= {:posts [post2 post4 post6] :next-offset 6}
-//             (foreign-invoke-query get-posts user1 0 3)))
-//      (is (= {:posts [post8] :next-offset nil}
-//             (foreign-invoke-query get-posts user1 6 3)))
-//
-//      (foreign-append! mute-depot (cm/->Unmute user1 user2))
-//
-//      (is (= {:posts [post1 post2 post3] :next-offset 3}
-//             (foreign-invoke-query get-posts user1 0 3)))
-//      (is (= {:posts [post4 post6 post7] :next-offset 7}
-//             (foreign-invoke-query get-posts user1 3 3)))
-//      (is (= {:posts [post8] :next-offset nil}
-//             (foreign-invoke-query get-posts user1 7 3)))
-//      )))
+      assertEquals(queryRes(6, post2, post4, post6), getPosts.invoke(user1, 0, 3));
+      assertEquals(queryRes(null, post8), getPosts.invoke(user1, 6, 3));
+
+      muteDepot.append(createUnmute(user1, user2));
+
+      assertEquals(queryRes(3, post1, post2, post3), getPosts.invoke(user1, 0, 3));
+      assertEquals(queryRes(7, post4, post6, post7), getPosts.invoke(user1, 3, 3));
+      assertEquals(queryRes(null, post8), getPosts.invoke(user1, 7, 3));
     }
   }
 }
