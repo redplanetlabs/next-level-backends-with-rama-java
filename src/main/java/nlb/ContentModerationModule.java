@@ -42,16 +42,11 @@ public class ContentModerationModule implements RamaModule {
                                        .setElem("*unmuted-user-id")
                                        .termVoid()));
 
-    topologies.query("get-posts-helper", "*user-id", "*from-offset", "*limit").out("*ret")
+    topologies.query("get-posts-helper", "*user-id", "*start-offset", "*end-offset").out("*posts")
               .hashPartition("*user-id")
-              .localSelect("$$posts", Path.key("*user-id").view(Ops.SIZE)).out("*num-posts")
-              .each(Ops.MIN, "*num-posts", new Expr(Ops.PLUS, "*from-offset", "*limit")).out("*end-offset")
-              .ifTrue(new Expr(Ops.EQUAL, "*end-offset", "*num-posts"),
-                Block.each(Ops.IDENTITY, null).out("*next-offset"),
-                Block.each(Ops.IDENTITY, "*end-offset").out("*next-offset"))
               .localSelect("$$posts",
                            Path.key("*user-id")
-                               .sublist("*from-offset", "*end-offset")
+                               .sublist("*start-offset", "*end-offset")
                                .all()).out("*post")
               .each(Ops.GET, "*post", "from-user-id").out("*from-user-id")
               .localSelect("$$mutes",
@@ -59,32 +54,29 @@ public class ContentModerationModule implements RamaModule {
                                .view(Ops.CONTAINS, "*from-user-id")).out("*muted?")
               .keepTrue(new Expr(Ops.NOT, "*muted?"))
               .originPartition()
-              .agg(Agg.list("*post")).out("*posts")
-              .agg(Agg.last("*next-offset")).out("*next-offset")
-              .each((List posts, Integer nextOffset) -> {
-                Map ret = new HashMap();
-                ret.put("fetched-posts", posts);
-                ret.put("next-offset", nextOffset);
-                return ret;
-              }, "*posts", "*next-offset").out("*ret");
+              .agg(Agg.list("*post")).out("*posts");
 
     topologies.query("get-posts", "*user-id", "*from-offset", "*limit").out("*ret")
               .hashPartition("*user-id")
               .each(() -> new ArrayList()).out("*posts")
               .loopWithVars(LoopVars.var("*query-offset", "*from-offset"),
-                Block.invokeQuery("get-posts-helper",
+                Block.localSelect("$$posts", Path.key("*user-id").view(Ops.SIZE)).out("*num-posts")
+                     .each(Ops.MINUS, "*limit", new Expr(Ops.SIZE, "*posts")).out("*fetch-amount")
+                     .each(Ops.MIN,
+                           "*num-posts",
+                           new Expr(Ops.PLUS, "*query-offset", "*fetch-amount")).out("*end-offset")
+                     .invokeQuery("get-posts-helper",
                                   "*user-id",
                                   "*query-offset",
-                                  new Expr(Ops.MINUS, "*limit",
-                                                      new Expr(Ops.SIZE, "*posts"))).out("*m")
-                     .each(Ops.GET, "*m", "fetched-posts").out("*fetched-posts")
-                     .each(Ops.GET, "*m", "next-offset").out("*next-offset")
+                                  "*end-offset").out("*fetched-posts")
                      .each((List posts, List fetchedPosts) -> posts.addAll(fetchedPosts),
                            "*posts", "*fetched-posts")
-                     .ifTrue(new Expr(Ops.OR, new Expr(Ops.IS_NULL, "*next-offset"),
-                                              new Expr(Ops.EQUAL, new Expr(Ops.SIZE, "*posts"), "*limit")),
-                        Block.emitLoop("*next-offset"),
-                        Block.continueLoop("*next-offset"))
+                     .cond(Case.create(new Expr(Ops.EQUAL, "*end-offset", "*num-posts"))
+                               .emitLoop(null),
+                           Case.create(new Expr(Ops.EQUAL, new Expr(Ops.SIZE, "*posts"), "*limit"))
+                               .emitLoop("*end-offset"),
+                           Case.create(true)
+                               .continueLoop("*end-offset"))
                 ).out("*next-offset")
               .originPartition()
               .each((List posts, Integer nextOffset) -> {
