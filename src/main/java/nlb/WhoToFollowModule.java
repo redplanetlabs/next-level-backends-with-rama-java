@@ -44,7 +44,7 @@ public class WhoToFollowModule implements RamaModule {
                                                    SortedRangeFromOptions.maxAmt(15)
                                                                          .excludeStart())).out("*m")
               .ifTrue(new Expr(Ops.LESS_THAN, new Expr(Ops.SIZE, "*m"), 15),
-                 Block.localTransform("$$next-id", Path.termVal(0L)),
+                 Block.localTransform("$$next-id", Path.termVal(-1L)),
                  Block.each((SortedMap m) -> m.lastKey(), "*m").out("*max-id")
                       .localTransform("$$next-id", Path.termVal("*max-id")))
               .each(Ops.EXPLODE_MAP, "*m").out("*account-id", "*follows")
