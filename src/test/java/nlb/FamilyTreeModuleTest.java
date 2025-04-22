@@ -81,7 +81,7 @@ public class FamilyTreeModuleTest {
 
       assertEquals(asSet(p7, p8), ancestorsQuery.invoke(p10, 0));
       assertEquals(asSet(p7, p8, p1, p2, p3, p4), ancestorsQuery.invoke(p10, 1));
-      assertEquals(asSet(p10, p11, p7, p8, p9, p1, p2, p3, p4, p5), ancestorsQuery.invoke(p14, 2));
+      assertEquals(asSet(p10, p11, p7, p8, p9, p1, p2, p3, p4, p5), ancestorsQuery.invoke(p14, 3));
 
       assertEquals(asMap(0, 0L), descendantsCountQuery.invoke(p14, 10));
       assertEquals(asMap(0, 3L, 1, 0L), descendantsCountQuery.invoke(p11, 10));
